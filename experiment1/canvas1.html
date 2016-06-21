@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas</title>
+    <style>
+    #canvas {
+        border: 1px solid red;
+    }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="canvas" width="1000" height="600"></canvas>
+
+    <script>
+    var init = function() {
+
+        var canvas = document.getElementById("canvas");
+        if (canvas.getContext) {
+            var ctx = canvas.getContext('2d');
+
+            var points = [];
+
+            canvas.addEventListener('click', function(e) {
+                (function() {
+                    console.log('clicked');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    points.push(getPosition(e));
+                    while (points.length > 2) {
+                        points = [];
+                        points.push(getPosition(e));
+                    }
+
+                    if (points.length == 2) {
+                        render(ctx, points);
+                    }
+                })();
+            }, false);
+        }
+    }
+
+    var getPosition = function(ev) {
+        var x, y;
+        if (ev.layerX || ev.layerX == 0) {
+            x = ev.layerX;
+            y = ev.layerY;
+        } else if (ev.offsetX || ev.offsetX == 0) { //Opera
+            x = ev.offsetX;
+            y = ev.offsetY;
+        }
+        return {
+            x: x,
+            y: y
+        };
+    }
+
+    var drawpoint = function(cxt, x, y) {
+        cxt.moveTo(x, y);
+        cxt.lineTo(x + 1, y + 1);
+        cxt.stroke();
+    }
+
+    var render = function(ctx, points) {
+        console.log('points is: ');
+        console.log(points);
+        var p1 = points[0];
+        var p2 = points[1];
+
+        if (p2.x < p1.x) {
+            var t = p1;
+            p1 = p2;
+            p2 = t;
+        }
+        a = p1.y - p2.y;
+        b = p2.x - p1.x;
+        if (b == 0) {
+            m = -1 * a * 100;
+        } else {
+            m = a / (p1.x - p2.x);
+            x = p1.x;
+            y = p1.y;
+        }
+        drawpoint(ctx, x, y);
+        if (m >= 0 && m <= 1) {
+            d = 2 * a + b;
+            d1 = 2 * a;
+            d2 = 2 * (a + b);
+            while (x < p2.x) {
+                if (d <= 0) {
+                    x++, y++, d += d2;
+                } else {
+                    x++;
+                    d += d1;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else if (m <= 0 && m >= -1) {
+            d = 2 * a - b;
+            d1 = 2 * a - 2 * b;
+            d2 = 2 * a;
+            while (x < p2.x) {
+                if (d > 0) {
+                    x++;
+                    y--;
+                    d += d1;
+                } else {
+                    x++;
+                    d += d2;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else if (m > 1) {
+            d = a + 2 * b;
+            d1 = 2 * (a + b), d2 = 2 * b;
+            while (y < p2.y) {
+                if (d > 0) {
+                    x++, y++, d += d1;
+                } else {
+                    y++, d += d2;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else {
+            d = a - 2 * b;
+            d1 = -2 * b, d2 = 2 * (a - b);
+            while (y > p2.y) {
+                if (d <= 0) {
+                    x++, y--, d += d2;
+                } else {
+                    y--, d += d1;
+                }
+                drawpoint(ctx, x, y);
+            }
+        }
+
+    }
+
+    init();
+    </script>
+</body>
+
+</html>
