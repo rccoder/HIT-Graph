@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas</title>
+    <style>
+    #canvas {
+        border: 1px solid red;
+    }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="1000" height="600"></canvas>
+
+    <button id="btn">切割</button>
+
+    <script>
+    // 点
+    var points = [];
+    // 线段
+    var segments = [];
+
+    // 矩形点
+    var recPoint = [
+      {
+        x: 300,
+        y: 200
+      },
+      {
+        x: 400,
+        y: 200
+      },
+      {
+        x: 400,
+        y: 400
+      },
+      {
+        x: 301,
+        y: 400
+      }
+    ];
+
+
+    var init = function() {
+        var canvas = document.getElementById("canvas");
+        var btn = document.getElementById("btn");
+
+        if (canvas.getContext) {
+            var ctx = canvas.getContext('2d');
+
+            canvas.addEventListener('click', function(e) {
+                (function() {
+                    console.log('clicked');
+                    //ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    points.push(getPosition(e));
+                })();
+            }, false);
+
+            var count = 0;
+            setInterval(function() {
+              count ++;
+              //ctx.clearRect(0, 0, canvas.width, canvas.height);
+              drawRectangle(ctx, recPoint);
+              recPoint[0].x += 10;
+              recPoint[1].x += 10;
+              recPoint[2].x += 10;
+              recPoint[3].x += 10;
+            }, 100)
+        }
+    }
+
+    /*
+     * 画矩形
+     */
+    var drawRectangle = function(ctx,recPoint) {
+
+      renderRec(ctx, recPoint);
+      stroke(ctx);
+    }
+
+    /*
+     * canvas 描点
+     */
+    var stroke = function(ctx) {
+      ctx.stroke();
+      ctx.stroke();
+      ctx.stroke();
+    }
+
+    /*
+     * 根据事件 ev 或者点击的坐标，返回对象
+     */
+    var getPosition = function(ev) {
+        var x, y;
+        if (ev.layerX || ev.layerX == 0) {
+            x = ev.layerX;
+            y = ev.layerY;
+        } else if (ev.offsetX || ev.offsetX == 0) { //Opera
+            x = ev.offsetX;
+            y = ev.offsetY;
+        }
+        return {
+            x: x,
+            y: y
+        };
+    }
+
+    /*
+     * 根据坐标画点
+     */
+    var drawpoint = function(cxt, x, y) {
+        cxt.moveTo(x, y);
+        cxt.lineTo(x + 1, y + 1);
+
+    }
+
+
+    /*
+     * 图像渲染函数
+     */
+    var renderRec = function(ctx, points) {
+        console.log('points is: ');
+        console.log(points);
+        for (var i = 0, len = points.length; i < len; i++) {
+            // 储存表示边的线段的两个顶点
+            var p = [];
+            if (i == points.length - 1) {
+                p.push({
+                    x: points[i].x,
+                    y: points[i].y
+                });
+                p.push({
+                    x: points[0].x,
+                    y: points[0].y
+                });
+            } else {
+                p.push({
+                    x: points[i].x,
+                    y: points[i].y
+                });
+                p.push({
+                    x: points[i + 1].x,
+                    y: points[i + 1].y
+                });
+            }
+            console.log('Line Will be: ');
+            console.log(p);
+            drawLine(ctx, p);
+            segments.push(p);
+        }
+        /*
+        var minAndMaxY = getMinAndMaxY(points);
+        console.log(`The MinY and MaxY is ${minAndMaxY.minY} and ${minAndMaxY.maxY}`);
+
+        var NET = buildNET(minAndMaxY, segments);
+        console.log('NET Table is: ');
+        console.log(NET);
+
+        var AET = buildAET(minAndMaxY, NET);
+        console.log('AET Table:');
+        console.log(AET);
+        */
+        //fillBlank(ctx, minAndMaxY, AET);
+
+    }
+    /*
+     填充
+     */
+    var fillBlank = function(ctx, minAndMaxY, AET) {
+      for(var nowY = minAndMaxY.minY, lenY = minAndMaxY.maxY; nowY < lenY; nowY ++) {
+        if(AET[nowY].length >= 2) {
+          for(var i = 0; i < AET[nowY].length; i += 2) {
+            var p = [];
+            if(AET[nowY][i+1].x === undefined) {
+              break;
+            }
+            p.push({
+              x: AET[nowY][i].x,
+              y: nowY+0.5
+            });
+            p.push({
+              x: AET[nowY][i+1].x,
+              y: nowY+0.5
+            })
+            //console.log('segment point');
+            //console.log(nowY);
+            //console.log(p);
+            drawLine(ctx, p);
+          }
+        }
+      }
+    }
+
+    /*
+     * 创建 AET 表
+     */
+    var buildAET = function(minAndMaxY, NET) {
+      var AET = NET;
+      for(var nowY = minAndMaxY.minY, lenY = minAndMaxY.maxY; nowY < lenY; nowY ++) {
+        //AET[nowY] = [];
+        //if(NET[nowY].length != 0) {
+        //  AET[nowY]
+        //}
+        AET[nowY].sort(function(a,b){return a.x>b.x?1:-1});
+      }
+      return AET;
+    }
+
+    /*
+     * 创建 NET 表
+     */
+    var buildNET = function(minAndMaxY, s) {
+      var segments = s;
+      var NETTable = {};
+      for(var nowY = minAndMaxY.minY, lenY = minAndMaxY.maxY; nowY < lenY; nowY ++) {
+        NETTable[nowY] = [];
+        for(var j = 0, lseg = segments.length; j < lseg; j++) {
+          var p1 = segments[j][0];
+          var p2 = segments[j][1];
+
+          // 在扫描线两边
+          if((p1.y - nowY) * (p2.y - nowY) < 0) {
+            // 两点式直线方程 (y-y2)/(y1-y2) = (x-x2)/(x1-x2)
+            // x = (y-y2)*(x1-x2)/(y1-y2) + x2;
+
+            var x = parseInt((nowY-p2.y)*(p1.x-p2.x)/(p1.y-p2.y) + p2.x);
+            var dx = parseInt((p2.x-p1.x) / (p2.y-p1.y));
+            var ymax = parseInt(Math.max(p1.y, p2.y));
+
+            NETTable[nowY].push(new Node(x, dx, ymax));
+          }
+        }
+      }
+      return NETTable;
+    }
+
+    /*
+     * NET节点表构造函数
+     */
+    function Node(x, dx, ymax) {
+      this.x = x;
+      this.dx = dx;
+      this.ymax = ymax;
+    }
+
+    /*
+     * 根据 points (所有点的数组) 返回纵坐标的最大值和最小值
+     */
+    var getMinAndMaxY = function(points) {
+      console.log(points)
+      var min = points[0].y;
+      var max = points[0].y;
+      for(var i = 0, l = points.length; i < l; i++) {
+        if(points[i].y < min) {
+          min = points[i].y;
+        }
+        if(points[i].y > max) {
+          max = points[i].y;
+        }
+      }
+      return {
+        minY: min,
+        maxY: max
+      }
+    }
+    /*
+     * 画线函数
+     * points 是一个 length 为 2 的数组, 表示线段的两个端点
+     */
+    var drawLine = function(ctx, points) {
+        var p1 = points[0];
+        var p2 = points[1];
+
+        if (p2.x < p1.x) {
+            var t = p1;
+            p1 = p2;
+            p2 = t;
+        }
+        a = p1.y - p2.y;
+        b = p2.x - p1.x;
+        if (b == 0) {
+            m = -1 * a * 100;
+        } else {
+            m = a / (p1.x - p2.x);
+            x = p1.x;
+            y = p1.y;
+        }
+        drawpoint(ctx, x, y);
+        if (m >= 0 && m <= 1) {
+            d = 2 * a + b;
+            d1 = 2 * a;
+            d2 = 2 * (a + b);
+            while (x < p2.x) {
+                if (d <= 0) {
+                    x++, y++, d += d2;
+                } else {
+                    x++;
+                    d += d1;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else if (m <= 0 && m >= -1) {
+            d = 2 * a - b;
+            d1 = 2 * a - 2 * b;
+            d2 = 2 * a;
+            while (x < p2.x) {
+                if (d > 0) {
+                    x++;
+                    y--;
+                    d += d1;
+                } else {
+                    x++;
+                    d += d2;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else if (m > 1) {
+            d = a + 2 * b;
+            d1 = 2 * (a + b), d2 = 2 * b;
+            while (y < p2.y) {
+                if (d > 0) {
+                    x++, y++, d += d1;
+                } else {
+                    y++, d += d2;
+                }
+                drawpoint(ctx, x, y);
+            }
+        } else {
+            d = a - 2 * b;
+            d1 = -2 * b, d2 = 2 * (a - b);
+            while (y > p2.y) {
+                if (d <= 0) {
+                    x++, y--, d += d2;
+                } else {
+                    y--, d += d1;
+                }
+                drawpoint(ctx, x, y);
+            }
+        }
+    }
+
+    init();
+    </script>
+</body>
+
+</html>
