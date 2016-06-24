@@ -13,8 +13,21 @@
 
 <body>
     <canvas id="canvas" width="1000" height="600"></canvas>
+
     <button id="btn">完成</button>
 
+    <button id="symmetry">中心对称</button>
+
+
+    <input type="text" id="x" name="x" placeholder="x">
+    <input type="text" id="y" name="y" placeholder="y">
+    <button type="button" id="translation">平移</button>
+
+    <input type="text" name="scal" id="scal_value" placeholder="缩放倍数">
+    <button type="button" id="scal">缩放</button>
+
+    <input type="text" name="rotate" id="rotate_value" placeholder="请输出旋转角度">
+    <button type="button" id="rotate">旋转</button>
     <script>
     // 点
     var points = [];
@@ -24,6 +37,10 @@
     var init = function() {
         var canvas = document.getElementById("canvas");
         var btn = document.getElementById("btn");
+        var symmetry = document.getElementById("symmetry");
+        var translation = document.getElementById("translation");
+        var scal = document.getElementById("scal");
+        var rotate = document.getElementById("rotate");
 
         if (canvas.getContext) {
             var ctx = canvas.getContext('2d');
@@ -37,11 +54,79 @@
             }, false);
 
             btn.addEventListener('click', function() {
-                render(ctx, points);
-                ctx.stroke();
-                points = [];
-            })
+                var sp = [].concat(points);
+                render(ctx, sp);
+                stroke(ctx);
+                //points = [];
+            });
+
+            symmetry.addEventListener('click', function() {
+              var sp = [].concat(points);
+              for(var i = 0, l = sp.length; i < l; i++) {
+                sp[i].x = 1000 - sp[i].x;
+                sp[i].y = 600 - sp[i].y;
+              }
+              render(ctx, sp);
+              stroke(ctx);
+            });
+
+            translation.addEventListener('click', function() {
+              var x = document.getElementById("x").value;
+              var y = document.getElementById("y").value;
+
+              var sp = [].concat(points);
+              for(var i = 0, l = sp.length; i < l; i++) {
+                sp[i].x = parseInt(x) + sp[i].x;
+                sp[i].y = parseInt(y) + sp[i].y;
+              }
+              render(ctx, sp);
+              stroke(ctx);
+            });
+
+            scal.addEventListener('click', function() {
+              var scal_value = document.getElementById("scal_value").value;
+
+              var sp = [].concat(points);
+              for(var i = 0, l = sp.length; i < l; i++) {
+                sp[i].x = scal_value * sp[i].x;
+                sp[i].y = scal_value * sp[i].y;
+              }
+              render(ctx, sp);
+              stroke(ctx);
+            });
+
+            rotate.addEventListener('click', function() {
+              var rotate_value = document.getElementById("rotate_value").value;
+              // A2=A1*PI/180
+              rotate_value = rotate_value * Math.PI / 180;
+              console.log(rotate_value)
+
+              var sinR = Math.sin(rotate_value);
+              var cosR = Math.cos(rotate_value);
+
+              console.log('sc')
+              console.log(sinR);
+              console.log(cosR);
+              var sp = [].concat(points);
+              for(var i = 0, l = sp.length; i < l; i++) {
+                sp[i].x = sp[i].x * cosR - sp[i].y * sinR;
+                sp[i].y = sp[i].x * sinR + sp[i].y * cosR;
+              }
+              render(ctx, sp);
+              stroke(ctx);
+            });
+
+
         }
+    }
+
+    /*
+     * canvas 描点
+     */
+    var stroke = function(ctx) {
+      ctx.stroke();
+      ctx.stroke();
+      ctx.stroke();
     }
 
     /*
@@ -127,6 +212,9 @@
         if(AET[nowY].length >= 2) {
           for(var i = 0; i < AET[nowY].length; i += 2) {
             var p = [];
+            if(AET[nowY][i+1].x === undefined) {
+              break;
+            }
             p.push({
               x: AET[nowY][i].x,
               y: nowY+0.5
